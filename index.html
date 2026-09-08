@@ -309,7 +309,7 @@ function fmtDate(d){return new Date(d).toLocaleDateString('en-GB',{day:'numeric'
 /* ---------- screens ---------- */
 async function render(){
   nav();
-  const R={home, pick, outfit, closet, add, item, week, outfits, insights, you, settings};
+  const R={home, pick, closet, add, item, week, outfits, insights, you, settings};
   (R[SCREEN]||home)(PARAM);
 }
 function header(extra){
