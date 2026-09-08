@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.vercel.wearwellindol",
+    "sha256_cert_fingerprints": ["85:93:AB:4B:BC:3E:2F:CF:D4:2A:DA:B8:25:68:CA:94:57:78:8C:35:92:CF:14:EB:57:35:A7:44:D6:90:41:CE"]
+  }
+}]
