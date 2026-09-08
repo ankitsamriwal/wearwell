@@ -198,7 +198,8 @@ let WX=null;
 async function loadWeather(){
   const p=S.profile;
   try{
-    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
+    const ac=new AbortController();const to=setTimeout(()=>ac.abort(),4000);
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`,{signal:ac.signal});clearTimeout(to);
     const j=await r.json();
     WX={t:Math.round(j.current.temperature_2m),feels:Math.round(j.current.apparent_temperature),code:j.current.weather_code,wind:Math.round(j.current.wind_speed_10m),prec:j.current.precipitation||0,hi:Math.round(j.daily.temperature_2m_max[0]),lo:Math.round(j.daily.temperature_2m_min[0]),rainP:j.daily.precipitation_probability_max?.[0]||0,ok:true};
   }catch(e){WX={ok:false}}
