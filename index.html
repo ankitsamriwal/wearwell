@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0D1017">
-<title>WearWell - your closet, styled by the weather</title>
+<title>Aaj Kya Pehnu - your closet, styled by the weather</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
@@ -154,7 +154,7 @@ img{display:block}
 <nav class="nav" id="nav"></nav>
 <input type="file" id="fileInput" accept="image/*" class="hidden">
 <script>
-/* ============ WearWell - on-device wardrobe stylist ============ */
+/* ============ Aaj Kya Pehnu - on-device wardrobe stylist ============ */
 const $=s=>document.querySelector(s);
 const LS='ww_v1';
 let S=load();
@@ -313,7 +313,7 @@ async function render(){
   (R[SCREEN]||home)(PARAM);
 }
 function header(extra){
-  return `<div class="top"><div class="brand">WearWell<small>your closet, styled</small></div>${extra||''}</div>`;
+  return `<div class="top"><div class="brand">Aaj Kya Pehnu<small>your closet, styled</small></div>${extra||''}</div>`;
 }
 
 /* HOME */
@@ -409,11 +409,11 @@ window.rewear=function(id){const o=S.outfits.find(x=>x.id===id);if(!o)return;
 let CFILTER=null;
 async function closet(){
   $('#app').innerHTML=header()+`
-  <div class="secttl"><h2>Your closet</h2><button onclick="go('add')">+ add item</button></div>
+  <div class="secttl"><h2>Your closet</h2><div><button onclick="pickBulkPhotos()" style="margin-right:6px">&#128248; bulk add</button><button onclick="go('add')">+ add item</button></div>
   <div class="chips" style="margin:2px 0 4px"><button class="chip sm ${!CFILTER?'on':''}" onclick="CFILTER=null;closet()">All</button>${CATS.map(c=>`<button class="chip sm ${CFILTER===c.id?'on':''}" onclick="CFILTER='${c.id}';closet()">${c.n}</button>`).join('')}</div>
   <div id="cg"></div>`;
   const items=S.items.filter(i=>!CFILTER||i.cat===CFILTER);
-  if(!items.length){$('#cg').innerHTML=`<div class="grid"><div class="gcell add" onclick="go('add')"><span class="plus">+</span>photo</div></div><div class="empty"><div class="et">${S.items.length?'Nothing in this category':'Start your closet'}</div>Photograph each piece on a hanger or flat - one item per photo.</div>`;return}
+  if(!items.length){$('#cg').innerHTML=`<div class="grid"><div class="gcell add" onclick="go('add')"><span class="plus">+</span>photo</div></div><div class="empty"><div class="et">${S.items.length?'Nothing in this category':'Start your closet'}</div>Photograph each piece on a hanger or flat - or bulk add a whole rail at once.<button class="cta ghost" style="margin-top:14px" onclick="pickBulkPhotos()">&#128248; Bulk add photos</button></div>`;return}
   const cells=await Promise.all(items.map(async i=>{const u=await photoURL(i.id);
     return `<div class="gcell" onclick="go('item','${i.id}')">${u?`<img src="${u}">`:''}<div class="gt">${esc(i.name||catName(i.cat))}</div></div>`}));
   $('#cg').innerHTML=`<div class="grid"><div class="gcell add" onclick="go('add')"><span class="plus">+</span>photo</div>${cells.join('')}</div>`;
@@ -446,11 +446,42 @@ window.refreshAdd=()=>{const keep=readForm();add(keep._editing||null).then(()=>{
 function readForm(){const o=DRAFT;o.name=$('#f-name')?.value??o.name;o.size=$('#f-size')?.value??o.size;o.bought=$('#f-bought')?.value??o.bought;o.store=$('#f-store')?.value??o.store;o.place=$('#f-place')?.value??o.place;o.price=$('#f-price')?.value??o.price;o._editing=S.items.some(x=>x.id===o.id)?o.id:null;return o}
 function restoreForm(o){DRAFT=o;['name','size','bought','store','place','price'].forEach(k=>{const el=$('#f-'+k);if(el)el.value=o[k]||''})}
 window.tglOcc=function(id){const i=DRAFT.occ.indexOf(id);if(i>=0)DRAFT.occ.splice(i,1);else DRAFT.occ.push(id);refreshAdd()}
-window.pickPhoto=function(){const f=$('#fileInput');f.onchange=async()=>{const file=f.files[0];if(!file)return;
+window.pickPhoto=function(){const f=$('#fileInput');f.multiple=false;f.onchange=async()=>{const file=f.files[0];if(!file)return;
   const blob=await downscale(file);DRAFT._photo=blob;const u=URL.createObjectURL(blob);$('#pp').innerHTML=`<img src="${u}">`};f.click()}
 function downscale(file){return new Promise(res=>{const img=new Image();img.onload=()=>{const m=900;let{width:w,height:h}=img;const s=Math.min(1,m/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);
   const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
   c.toBlob(b=>res(b),'image/jpeg',0.82)};img.src=URL.createObjectURL(file)})}
+/* BULK add - photograph a whole rail, tag categories, save all */
+window.pickBulkPhotos=function(){
+  const f=$('#fileInput');f.multiple=true;
+  f.onchange=async()=>{
+    f.multiple=false;
+    const files=[...f.files].slice(0,24);f.value='';if(!files.length)return;
+    toast('Adding '+files.length+' photos...');
+    const ids=[];
+    for(const file of files){
+      const blob=await downscale(file);
+      const id=uid();
+      await putPhoto(id,blob);
+      S.items.unshift({id,cat:'top',color:null,warm:2,occ:['casual','work'],size:'',bought:'',store:'',place:'',price:'',name:'',wears:0});
+      ids.push(id);
+    }
+    save();bulkReview(ids);
+    toast(files.length+' pieces added - set their categories');
+  };f.click();
+}
+async function bulkReview(ids){
+  const cards=await Promise.all(ids.map(async id=>{const it=S.items.find(x=>x.id===id);const u=await photoURL(id);
+    return `<div class="gcell" style="position:relative">${u?`<img src="${u}">`:''}
+      <select onchange="bulkSetCat('${id}',this.value)" style="position:absolute;left:4px;right:4px;bottom:4px;background:rgba(13,16,23,.92);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:5px;font-size:12px">
+        ${CATS.map(c=>`<option value="${c.id}" ${it.cat===c.id?'selected':''}>${c.n}</option>`).join('')}
+      </select></div>`}));
+  $('#app').innerHTML=`<div class="backbar"><button onclick="back()">&#8592; Back</button><h2>Bulk add - ${ids.length} pieces</h2></div>
+  <div class="sub" style="margin:2px 0 10px">Tap the label under each photo to set its category. Everything else (colour, size, purchase details) can wait - tap any piece later to edit it.</div>
+  <div class="grid">${cards.join('')}</div>
+  <button class="cta" onclick="back()">Done - ${ids.length} in my closet</button>`;
+}
+window.bulkSetCat=function(id,cat){const it=S.items.find(x=>x.id===id);if(it){it.cat=cat;save()}};
 window.saveDraft=async function(editing){
   readForm();
   if(DRAFT._photo)await putPhoto(DRAFT.id,DRAFT._photo);
@@ -581,7 +612,7 @@ async function insights(){
     h+=`<div class="secttl"><h2>Veterans</h2></div>`;
     for(const x of old.slice(0,4)){const u=await photoURL(x.i.id);
       h+=`<div class="irow">${u?`<img src="${u}">`:''}<div class="ib"><b>${esc(x.i.name||catName(x.i.cat))}</b><span>bought ${new Date(x.i.bought).toLocaleDateString('en-GB',{month:'short',year:'numeric'})}${x.i.store?' · '+esc(x.i.store):''} · worn ${x.i.wears||0}x</span></div><span class="pill age">${x.y.toFixed(1)} yrs old</span></div>`}
-    h+=`<div class="notice">Pieces cross 3 years and WearWell flags them - whether they are keepers worth tailoring, or ready to retire.</div>`;
+    h+=`<div class="notice">Pieces cross 3 years and Aaj Kya Pehnu flags them - whether they are keepers worth tailoring, or ready to retire.</div>`;
   }
   if(never.length&&S.items.length>3){
     h+=`<div class="secttl"><h2>Never worn</h2></div>`;
@@ -613,8 +644,10 @@ function settings(){
     <button class="chip sm" style="margin-top:10px" onclick="useGPS()">Use my current location</button></div>
   <div class="card"><h3>Backup</h3><div class="sub">Everything lives on this device. Export keeps a copy - photos included.</div>
     <div class="btnrow"><button class="cta ghost" onclick="exportData()">Export</button><button class="cta ghost" onclick="importData()">Restore</button></div></div>
+  <div class="card"><h3>Aging nudges</h3><div class="sub">Get a quiet nudge when a piece turns 3 - keeper or retire, your call. Local notifications only, nothing leaves the phone.</div>
+    <button class="chip sm" style="margin-top:10px" onclick="enableNudges()" id="nudgeBtn">${('Notification' in window&&Notification.permission==='granted')?'Nudges on':'Turn on nudges'}</button></div>
   <div class="card"><h3>Privacy</h3><div class="sub">No accounts, no servers, no analytics. Your closet never leaves this phone - the only network call is the anonymous weather forecast.</div></div>
-  <div class="card"><h3>About</h3><div class="sub">WearWell styles outfits from the clothes you already own, using live weather, the occasion and the time of day.</div></div>
+  <div class="card"><h3>About</h3><div class="sub">Aaj Kya Pehnu styles outfits from the clothes you already own, using live weather, the occasion and the time of day.</div></div>
   <button class="cta ghost" onclick="S.tourDone=false;save();startTour()">Replay the tour</button>`;
 }
 window.setCity=async function(){
@@ -646,10 +679,10 @@ window.importData=function(){
 
 /* ---------- onboarding tour ---------- */
 const TOUR=[
- {t:'Meet your closet, styled',p:'WearWell builds outfits from the clothes you already own - matched to the weather, the occasion and the time of day.',art:'hanger'},
+ {t:'Meet your closet, styled',p:'Aaj Kya Pehnu builds outfits from the clothes you already own - matched to the weather, the occasion and the time of day.',art:'hanger'},
  {t:'Scan your wardrobe in',p:'Photograph each piece - hanger shot or flat lay, one item per photo. Tag the colour, warmth, size and what it suits. Five minutes now, styled mornings forever.',art:'camera'},
  {t:'Tell it the moment',p:'Pick the occasion - work, date, sport, travel - and the time of day. Live weather picks the layers; your closet picks the look.',art:'sun'},
- {t:'Plan the week, know your clothes',p:'Seven days of outfits with no repeats. And quietly, WearWell learns: what you never wear, what earns its keep, and when a favourite turns three years old.',art:'cal'}];
+ {t:'Plan the week, know your clothes',p:'Seven days of outfits with no repeats. And quietly, Aaj Kya Pehnu learns: what you never wear, what earns its keep, and when a favourite turns three years old.',art:'cal'}];
 let TSTEP=0;
 function startTour(){TSTEP=0;drawTour()}
 function drawTour(){
@@ -670,11 +703,31 @@ function drawTour(){
 window.tourNext=function(){if(TSTEP<TOUR.length-1){TSTEP++;drawTour()}else endTour(true)}
 window.endTour=function(addFirst){S.tourDone=true;save();$('#tourRoot').innerHTML='';if(addFirst)go('add');else render()}
 
+window.enableNudges=async function(){
+  if(!('Notification' in window))return toast('This browser has no notifications');
+  const p=await Notification.requestPermission();
+  if(p==='granted'){toast('Nudges on');const b=$('#nudgeBtn');if(b)b.textContent='Nudges on';ageNudge(true)}
+  else toast('Permission not given - the insights screen still tracks age');
+}
+function ageNudge(force){
+  S.notif=S.notif||{nudgedIds:[]};
+  const vets=S.items.filter(i=>{const a=ageTxt(i.bought);return a&&a.includes('yrs')&&parseFloat(a)>=3});
+  const fresh=vets.filter(i=>!S.notif.nudgedIds.includes(i.id));
+  if(!fresh.length&&!force)return;
+  const names=fresh.slice(0,3).map(i=>i.name||catName(i.cat));
+  const body=fresh.length?names.join(', ')+(fresh.length>3?' and '+(fresh.length-3)+' more':'')+(fresh.length===1?' just crossed':' just crossed')+' 3 years - keeper or retire?':'Aging nudges are on. We will flag pieces as they turn 3.';
+  if('Notification' in window&&Notification.permission==='granted'){
+    try{new Notification('Aaj Kya Pehnu',{body,icon:'icons/icon-192.png',tag:'age-nudge'})}catch(e){}
+  }
+  S.notif.nudgedIds=[...new Set([...S.notif.nudgedIds,...fresh.map(i=>i.id)])];
+  save();
+}
 /* ---------- boot ---------- */
 (async function(){
   await loadWeather();
   if('serviceWorker' in navigator)try{navigator.serviceWorker.register('sw.js')}catch(e){}
   if(!S.tourDone)startTour();else render();
+  if(S.tourDone)setTimeout(()=>ageNudge(false),2500);
 })();
 </script>
 </body>
