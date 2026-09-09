@@ -2,7 +2,7 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "app.vercel.wearwellindol",
-    "sha256_cert_fingerprints": ["85:93:AB:4B:BC:3E:2F:CF:D4:2A:DA:B8:25:68:CA:94:57:78:8C:35:92:CF:14:EB:57:35:A7:44:D6:90:41:CE"]
+    "package_name": "app.vercel.wearwell_indol.twa",
+    "sha256_cert_fingerprints": ["7E:2C:02:63:24:7F:00:94:94:0A:78:9E:2D:4B:F6:79:25:FA:CE:C5:81:D5:68:6E:C0:DD:35:61:F1:3F:C8:D1"]
   }
 }]
