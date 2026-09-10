@@ -36,13 +36,20 @@ img{display:block}
 .iconbtn{width:38px;height:38px;border-radius:12px;background:var(--card);border:none;box-shadow:var(--raise-sm);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:1.05rem}
 
 /* weather hero */
-.weather{margin-top:14px;border-radius:22px;padding:20px;position:relative;overflow:hidden;background:var(--card);box-shadow:var(--raise);border:none}
-.weather .wloc{font-size:.75rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
-.weather .wtemp{font-size:3.4rem;font-weight:700;letter-spacing:-.02em;line-height:1;margin:8px 0 2px}
-.weather .wcond{color:var(--dim);font-size:.9rem}
-.weather .wmeta{display:flex;gap:14px;margin-top:12px;font-size:.75rem;color:var(--faint)}
-.weather .wicon{position:absolute;right:18px;top:16px;width:64px;height:64px;opacity:.9}
-.weather .wadvice{margin-top:12px;font-size:.82rem;color:var(--gold);border-top:1px solid rgba(0,0,0,.06);padding-top:10px}
+.weather{margin-top:12px;border-radius:16px;padding:10px 14px;display:flex;align-items:center;flex-wrap:wrap;gap:2px 12px;background:var(--card);box-shadow:var(--raise-sm);border:none}
+.weather .wloc{font-size:.68rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.weather .wtemp{font-size:1.5rem;font-weight:700;letter-spacing:-.02em;line-height:1;margin:0}
+.weather .wcond{color:var(--dim);font-size:.8rem}
+.weather .wmeta{display:flex;gap:10px;font-size:.7rem;color:var(--faint)}
+.weather .wicon{width:30px;height:30px;opacity:.9}
+.weather .wadvice{font-size:.72rem;color:var(--gold);flex-basis:100%}
+/* clothes carousel - men / women / kids */
+.wearcar{margin:14px -16px 2px;overflow:hidden;padding:18px 16px}
+.wearcar .track{display:flex;gap:12px;width:max-content;animation:wcslide 36s linear infinite}
+.wearcar .c{flex:0 0 auto;width:104px;background:var(--card);border-radius:16px;box-shadow:var(--raise);padding:7px}
+.wearcar .c img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:11px;display:block;background:#dde4f0}
+.wearcar .c .l{font-size:.64rem;font-weight:600;color:var(--dim);text-align:center;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes wcslide{to{transform:translateX(-50%)}}
 
 /* cards */
 .card{background:var(--card);border:none;box-shadow:var(--raise);border-radius:var(--r);padding:16px;margin-top:14px}
@@ -340,6 +347,8 @@ function header(extra){
 }
 
 /* HOME */
+const WEAR_CARDS=[["Men's casual","1617137968427-85924c800a22"],["Men's formal","1507679799987-c73779587ccf"],["Men's street","1520975954732-35dd22299614"],["Women's fashion","1483985988355-763728e1935b"],["Dresses","1515886657613-9f3515b0c78f"],["Women's style","1490481651871-ab68de25d43d"],["Boys","1503919545889-aef636e10ad4"],["Girls","1519238263530-99bdd11df2ea"],["Kids","1471286174890-9c112ffca5b4"],["Essentials","1441986300917-64674bd600d8"],["Wardrobe","1445205170230-053b83016050"],["Knitwear","1434389677669-e08b4cac3105"]];
+const WEAR_CAR_HTML=(()=>{const c=WEAR_CARDS.map(([t,id])=>`<div class="c"><img loading="lazy" src="https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=400&q=60" alt="${t}"><div class="l">${t}</div></div>`).join('');return `<div class="wearcar"><div class="track">${c}${c}</div></div>`;})();
 async function home(){
   const h=new Date().getHours();
   const greet=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
@@ -352,6 +361,7 @@ async function home(){
     <div class="wmeta">${WX&&WX.ok?`<span>H ${WX.hi}&deg; / L ${WX.lo}&deg;</span><span>Rain ${WX.rainP}%</span><span>Wind ${WX.wind} km/h</span>`:''}</div>
     <div class="wadvice">${weatherAdvice()}</div>
   </div>
+  ${WEAR_CAR_HTML}
   <button class="cta" onclick="go('pick')">What do I wear?</button>
   <button class="cta ghost" onclick="go('week')">Plan my week</button>
   <button class="cta ghost" onclick="go('sort')">&#10024; Sort my closet</button>
