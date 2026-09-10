@@ -347,8 +347,8 @@ function header(extra){
 }
 
 /* HOME */
-const WEAR_CARDS=[["Men's casual","1617137968427-85924c800a22"],["Men's formal","1507679799987-c73779587ccf"],["Men's street","1520975954732-35dd22299614"],["Women's fashion","1483985988355-763728e1935b"],["Dresses","1515886657613-9f3515b0c78f"],["Women's style","1490481651871-ab68de25d43d"],["Boys","1503919545889-aef636e10ad4"],["Girls","1519238263530-99bdd11df2ea"],["Kids","1471286174890-9c112ffca5b4"],["Essentials","1441986300917-64674bd600d8"],["Wardrobe","1445205170230-053b83016050"],["Knitwear","1434389677669-e08b4cac3105"]];
-const WEAR_CAR_HTML=(()=>{const c=WEAR_CARDS.map(([t,id])=>`<div class="c"><img loading="lazy" src="https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=400&q=60" alt="${t}"><div class="l">${t}</div></div>`).join('');return `<div class="wearcar"><div class="track">${c}${c}</div></div>`;})();
+const WEAR_CARDS=["1542272604-787c3835535d","1523381210434-271e8be1f52b","1434389677669-e08b4cac3105","1551028719-00167b16eac5","1576995853123-5a10305d93c0","1622290291468-a28f7a7dc6a8"];
+const WEAR_CAR_HTML=(()=>{const c=WEAR_CARDS.map(id=>`<div class="c"><img loading="lazy" src="https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=400&q=60" alt=""></div>`).join('');return `<div class="wearcar"><div class="track">${c}${c}</div></div>`;})();
 async function home(){
   const h=new Date().getHours();
   const greet=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
