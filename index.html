@@ -146,6 +146,26 @@ img{display:block}
 .kv{display:flex;justify-content:space-between;font-size:.83rem;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .kv span{color:var(--dim)}
 .notice{background:rgba(232,200,118,.07);border:1px solid rgba(232,200,118,.25);border-radius:14px;padding:13px 15px;font-size:.8rem;color:var(--gold);margin-top:14px;line-height:1.5}
+
+/* sort my closet */
+.steps{display:flex;gap:6px;margin:16px 0 2px}
+.steps .st{flex:1;height:3px;border-radius:99px;background:var(--line)}
+.steps .st.on{background:var(--gold)}
+.cmpwrap{position:relative;margin-top:14px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+.cmpwrap img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.cmptag{position:absolute;top:10px;left:10px;background:rgba(13,16,23,.88);border:1px solid var(--line);color:var(--gold);padding:4px 12px;border-radius:999px;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase}
+.cmpbtns{display:flex;gap:8px;margin-top:10px}
+.cmpbtns .chip{flex:1}
+.planrow{display:flex;gap:12px;padding:11px 2px;border-bottom:1px solid rgba(255,255,255,.05);font-size:.87rem;line-height:1.5}
+.planno{font-family:Georgia,serif;color:var(--gold);font-size:1.05rem;min-width:20px}
+.orglinks{display:flex;gap:8px;margin-top:8px}
+.orglinks a{flex:1;text-align:center;font-size:.76rem;color:var(--gold);border:1px solid rgba(232,200,118,.35);border-radius:10px;padding:8px 0;text-decoration:none}
+.dimsrow{display:flex;gap:8px}
+.dimsrow>div{flex:1}
+.loadingdots:after{content:'';animation:ld 1.2s infinite steps(4)}
+@keyframes ld{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+.spacerow{display:flex;gap:10px;align-items:center}
+.spacerow img{width:64px;height:80px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -157,9 +177,9 @@ img{display:block}
 /* ============ Aaj Kya Pehnu - on-device wardrobe stylist ============ */
 const $=s=>document.querySelector(s);
 const LS='ww_v1';
-let S=load();
+let S=load();if(!S.spaces)S.spaces=[];
 function load(){try{const d=JSON.parse(localStorage.getItem(LS));if(d&&d.v===1)return d}catch(e){}
-  return {v:1,items:[],outfits:[],weekPlan:null,tourDone:false,profile:{city:'Dubai',lat:25.2048,lon:55.2708}}}
+  return {v:1,items:[],outfits:[],weekPlan:null,spaces:[],tourDone:false,profile:{city:'Dubai',lat:25.2048,lon:55.2708}}}
 function save(){localStorage.setItem(LS,JSON.stringify(S))}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function esc(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -296,7 +316,7 @@ try{history.replaceState({sc:'home'},'')}catch(e){}
 /* ---------- shared bits ---------- */
 function nav(){
   const items=[['home','Home','M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10'],['pick','Wear','M12 3v3M12 18v3M3 12h3M18 12h3M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z'],['closet','Closet','M4 4h16v16H4zM4 9h16M9 4v5'],['week','Week','M4 6h16M4 12h16M4 18h10'],['you','You','M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20c0-4 4-6 8-6s8 2 8 6']];
-  const map={outfits:'you',insights:'you',settings:'you',add:'closet',item:'closet',outfit:'pick'};
+  const map={outfits:'you',insights:'you',settings:'you',add:'closet',item:'closet',outfit:'pick',sort:'closet'};
   const cur=map[SCREEN]||SCREEN;
   $('#nav').innerHTML='<div class="navin">'+items.map(([id,n,d])=>
     `<button class="${cur===id?'on':''}" onclick="go('${id}')"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>${n}</button>`).join('')+'</div>';
@@ -309,7 +329,7 @@ function fmtDate(d){return new Date(d).toLocaleDateString('en-GB',{day:'numeric'
 /* ---------- screens ---------- */
 async function render(){
   nav();
-  const R={home, pick, closet, add, item, week, outfits, insights, you, settings};
+  const R={home, pick, closet, add, item, week, outfits, insights, you, settings, sort};
   (R[SCREEN]||home)(PARAM);
 }
 function header(extra){
@@ -331,6 +351,7 @@ async function home(){
   </div>
   <button class="cta" onclick="go('pick')">What do I wear?</button>
   <button class="cta ghost" onclick="go('week')">Plan my week</button>
+  <button class="cta ghost" onclick="go('sort')">&#10024; Sort my closet</button>
   <div class="secttl"><h2>Your closet</h2><button onclick="go('closet')">see all</button></div>
   <div id="homeCloset"><div class="sub" style="padding:6px 2px">Loading...</div></div>
   <div class="secttl"><h2>Wardrobe pulse</h2><button onclick="go('insights')">insights</button></div>
@@ -646,7 +667,7 @@ function settings(){
     <div class="btnrow"><button class="cta ghost" onclick="exportData()">Export</button><button class="cta ghost" onclick="importData()">Restore</button></div></div>
   <div class="card"><h3>Aging nudges</h3><div class="sub">Get a quiet nudge when a piece turns 3 - keeper or retire, your call. Local notifications only, nothing leaves the phone.</div>
     <button class="chip sm" style="margin-top:10px" onclick="enableNudges()" id="nudgeBtn">${('Notification' in window&&Notification.permission==='granted')?'Nudges on':'Turn on nudges'}</button></div>
-  <div class="card"><h3>Privacy</h3><div class="sub">No accounts, no servers, no analytics. Your closet never leaves this phone - the only network call is the anonymous weather forecast.</div></div>
+  <div class="card"><h3>Privacy</h3><div class="sub">No accounts, no analytics. Your clothes and photos live on this phone. Two exceptions: the anonymous weather forecast, and Sort My Closet - that one photo goes once to the AI organiser and image service to draw your after-state, and is not stored there.</div></div>
   <div class="card"><h3>About</h3><div class="sub">Aaj Kya Pehnu styles outfits from the clothes you already own, using live weather, the occasion and the time of day.</div></div>
   <button class="cta ghost" onclick="S.tourDone=false;save();startTour()">Replay the tour</button>`;
 }
@@ -722,6 +743,192 @@ function ageNudge(force){
   S.notif.nudgedIds=[...new Set([...S.notif.nudgedIds,...fresh.map(i=>i.id)])];
   save();
 }
+
+/* ---------- SORT MY CLOSET ---------- */
+const SORT_WORKER='https://divine-guide.ankitsamriwal.workers.dev/chat';
+const SORT_TYPES=[{id:'wardrobe',n:'Wardrobe'},{id:'almirah',n:'Almirah'},{id:'open_shelf',n:'Open shelves'},{id:'walk_in',n:'Walk-in'}];
+const COMP_KINDS={rail:'Hanging rail',shelf:'Shelf',drawer:'Drawer',box:'Boxes / baskets',floor:'Floor space'};
+let SORT=null;
+function newSort(){return {step:1,photoId:null,spaceId:null,busy:false,analysis:null,fallback:false,type:'wardrobe',dims:{w:120,h:200,d:55},plan:[],orgs:[],afterId:null,showAfter:true,genState:'idle',genErr:null}}
+
+async function sort(spaceId){
+  if(spaceId){const sp=S.spaces.find(x=>x.id===spaceId);
+    if(sp){SORT={step:4,photoId:sp.photoId,spaceId:sp.id,busy:false,analysis:sp.analysis,fallback:false,type:sp.type||'wardrobe',dims:sp.dims||{w:120,h:200,d:55},plan:sp.plan||[],orgs:sp.orgs||[],afterId:sp.afterId||null,showAfter:!!sp.afterId,genState:sp.afterId?'done':'idle',genErr:null}}
+    else SORT=newSort();
+  } else if(!SORT||SORT._done) SORT=newSort();
+  const st=SORT;
+  const steps=`<div class="steps">${[1,2,3,4].map(i=>`<div class="st ${st.step>=i?'on':''}"></div>`).join('')}</div>`;
+  let h=`<div class="backbar"><button onclick="back()">&#8592; Back</button><h2>Sort my closet</h2></div>`+steps;
+
+  if(st.step===1){
+    const u=st.photoId?await photoURL(st.photoId):null;
+    h+=`<div class="card"><h3>Photograph your open closet</h3><div class="sub">Doors open, everything visible. The organiser reads the space - sections, boxes, compartments - and draws you the after-state: sorted, structured, cleaned.</div></div>
+    <div class="photopick" id="sp" onclick="pickSortPhoto()">${u?`<img src="${u}">`:'<span class="big">&#128247;</span><span>tap to photograph or upload</span>'}</div>
+    ${st.busy?`<div class="notice">Reading your closet<span class="loadingdots"></span></div>`:''}
+    ${st.err?`<div class="notice" style="border-color:rgba(217,140,166,.35);color:var(--rose);background:rgba(217,140,166,.06)">${st.err}</div>`:''}
+    ${st.photoId&&!st.busy?`<button class="cta" onclick="analyzeSort()">Analyze the space</button>`:''}`;
+    const spaces=S.spaces||[];
+    if(spaces.length){
+      h+=`<div class="secttl"><h2>Your sorted spaces</h2></div>`;
+      const rows=await Promise.all(spaces.map(async sp=>{const u2=await photoURL(sp.afterId||sp.photoId);
+        return `<div class="card spacerow" style="cursor:pointer" onclick="viewSpace('${sp.id}')">${u2?`<img src="${u2}">`:''}<div style="flex:1"><b style="font-size:.92rem">${esc((SORT_TYPES.find(t=>t.id===sp.type)||{}).n||'Closet')}</b><div class="sub">${sp.dims?sp.dims.w+' x '+sp.dims.h+' x '+sp.dims.d+' cm · ':''}${fmtDate(sp.created)}</div></div><span style="color:var(--gold)">&#8250;</span></div>`}));
+      h+=rows.join('');
+    }
+  }
+
+  if(st.step===2){
+    const a=st.analysis||{};
+    h+=`<div class="card"><h3>What the organiser sees</h3>
+      ${a.clutter?`<div class="sub" style="margin-bottom:8px">${esc(a.clutter)}</div>`:''}
+      ${(a.compartments||[]).map(c=>`<div class="kv"><span>${COMP_KINDS[c.kind]||esc(c.kind)}${c.count>1?' x '+c.count:''}</span><b>${esc(c.holds||'')}</b></div>`).join('')}
+    </div>
+    ${st.fallback?`<div class="notice" style="border-color:rgba(127,179,217,.3);color:var(--sky);background:rgba(127,179,217,.06)">The AI organiser was unreachable, so this is an on-device estimate. You can still confirm and get your after-state.</div>`:''}
+    <label>Closet type</label><div class="chips">${SORT_TYPES.map(t=>`<button class="chip ${st.type===t.id?'on':''}" onclick="SORT.type='${t.id}';sort()">${t.n}</button>`).join('')}</div>
+    <button class="cta" onclick="SORT.step=3;sort()">Looks right - confirm size</button>`;
+  }
+
+  if(st.step===3){
+    const e=st.dims;
+    h+=`<div class="notice">This is the size I have captured - kindly confirm the actual size of your cupboard / almirah / closet.</div>
+    <div class="card"><div class="dimsrow">
+      <div><label>Width (cm)</label><input id="d-w" type="number" min="40" max="500" value="${e.w}"></div>
+      <div><label>Height (cm)</label><input id="d-h" type="number" min="40" max="300" value="${e.h}"></div>
+      <div><label>Depth (cm)</label><input id="d-d" type="number" min="20" max="120" value="${e.d}"></div>
+    </div></div>
+    <button class="cta" onclick="confirmDims()">Confirm - show my sorted closet</button>
+    <button class="cta ghost" onclick="SORT.step=2;sort()">Back to structure</button>`;
+  }
+
+  if(st.step===4){
+    const beforeU=st.photoId?await photoURL(st.photoId):null;
+    const afterU=st.afterId?await photoURL(st.afterId):null;
+    const showing=st.showAfter&&afterU;
+    h+=`<div class="card"><h3>Your closet, sorted</h3>
+    ${st.genState==='working'?`<div class="notice">Drawing your after-state<span class="loadingdots"></span> this can take up to a minute.</div>`:''}
+    ${st.genErr?`<div class="notice" style="border-color:rgba(217,140,166,.35);color:var(--rose);background:rgba(217,140,166,.06)">${st.genErr}</div>`:''}
+    ${beforeU?`<div class="cmpwrap"><img src="${showing?afterU:beforeU}"><div class="cmptag">${showing?'After':'Before'}</div></div>
+    ${afterU?`<div class="cmpbtns"><button class="chip ${!st.showAfter?'on':''}" onclick="SORT.showAfter=false;sort()">Before</button><button class="chip ${st.showAfter?'on':''}" onclick="SORT.showAfter=true;sort()">After</button></div>`:''}`:''}
+    </div>
+    ${st.plan.length?`<div class="secttl"><h2>The sorting plan</h2></div><div class="card">${st.plan.map((p,i)=>`<div class="planrow"><div class="planno">${i+1}</div><div>${esc(p)}</div></div>`).join('')}</div>`:''}
+    ${st.orgs.length?`<div class="secttl"><h2>Organizers worth buying</h2></div>`+st.orgs.map(o=>`<div class="card"><h3>${esc(o.n)}</h3><div class="sub">${esc(o.w)}</div><div class="sub" style="color:var(--faint);font-size:.72rem;margin-top:4px">${esc(o.s)}</div><div class="orglinks"><a href="https://www.amazon.ae/s?k=${o.q}" target="_blank" rel="noopener">Amazon.ae</a><a href="https://www.ikea.com/ae/en/search/?q=${o.q.replace(/\+/g,'%20')}" target="_blank" rel="noopener">IKEA</a></div></div>`).join(''):''}
+    <button class="cta ghost" onclick="SORT=null;go('sort')">Sort another closet</button>`;
+  }
+  $('#app').innerHTML=h;
+}
+window.viewSpace=function(id){go('sort',id)}
+
+window.pickSortPhoto=function(){const f=$('#fileInput');f.multiple=false;f.value='';
+  f.onchange=async()=>{const file=f.files[0];if(!file)return;
+    const blob=await downscaleBig(file);SORT.photoId=uid();await putPhoto(SORT.photoId,blob);
+    SORT.err=null;sort()};f.click()}
+function downscaleBig(file){return new Promise(res=>{const img=new Image();img.onload=()=>{const m=1400;let{width:w,height:h}=img;const s=Math.min(1,m/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);
+  const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+  c.toBlob(b=>res(b),'image/jpeg',0.85)};img.src=URL.createObjectURL(file)})}
+
+window.analyzeSort=async function(){
+  if(SORT.busy)return;SORT.busy=true;SORT.err=null;sort();
+  try{
+    const blob=await getPhoto(SORT.photoId);
+    const a=await aiAnalyzeCloset(blob);
+    SORT.analysis=a;SORT.fallback=false;
+    if(a.closet_type&&SORT_TYPES.some(t=>t.id===a.closet_type))SORT.type=a.closet_type;
+    if(a.estimated_dims_cm&&a.estimated_dims_cm.w)SORT.dims={w:Math.round(a.estimated_dims_cm.w),h:Math.round(a.estimated_dims_cm.h||200),d:Math.round(a.estimated_dims_cm.d||55)};
+    SORT.step=2;
+  }catch(e){
+    try{const blob=await getPhoto(SORT.photoId);const a=await localScan(blob);
+      SORT.analysis=a;SORT.fallback=true;SORT.step=2;
+    }catch(e2){SORT.err='Could not read that photo - try another angle with better light.'}
+  }
+  SORT.busy=false;sort();
+}
+
+async function aiAnalyzeCloset(blob){
+  const b64=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.readAsDataURL(blob)});
+  const sys='You are a professional closet organiser analysing a photo of an open closet. Reply with strict JSON only, no markdown, no commentary: {"closet_type":"wardrobe|almirah|open_shelf|walk_in","estimated_dims_cm":{"w":number,"h":number,"d":number},"compartments":[{"kind":"rail|shelf|drawer|box|floor","count":number,"holds":"what it currently holds, 3-6 words"}],"clutter":"one honest sentence on the current state","quick_wins":["short action","short action","short action"]}. Estimate real dimensions in centimetres from standard furniture proportions. List every distinct compartment you can see.';
+  const body={system_instruction:{parts:[{text:sys}]},contents:[{role:'user',parts:[{text:'Analyse this closet photo.'},{inline_data:{mime_type:'image/jpeg',data:b64}}]}]};
+  const ac=new AbortController();const to=setTimeout(()=>ac.abort(),45000);
+  const r=await fetch(SORT_WORKER,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ac.signal});
+  clearTimeout(to);
+  if(!r.ok)throw new Error('ai_'+r.status);
+  const j=await r.json();
+  const t=(j.text||'').replace(/```json|```/g,'').trim();
+  const a=JSON.parse(t);
+  if(!a||!Array.isArray(a.compartments)||!a.compartments.length)throw new Error('bad_analysis');
+  a.compartments=a.compartments.filter(c=>c&&c.kind).slice(0,10);
+  return a;
+}
+
+function localScan(blob){return new Promise((res,rej)=>{const img=new Image();img.onerror=rej;img.onload=()=>{
+  const w=160,h=Math.round(w*img.height/img.width);
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(img,0,0,w,h);
+  const d=x.getImageData(0,0,w,h).data;
+  const g=new Float32Array(w*h);
+  for(let i=0;i<w*h;i++)g[i]=d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11;
+  const rows=new Float32Array(h),cols=new Float32Array(w);
+  for(let y=1;y<h;y++)for(let xx=0;xx<w;xx++)rows[y]+=Math.abs(g[y*w+xx]-g[(y-1)*w+xx]);
+  for(let xx=1;xx<w;xx++)for(let y=0;y<h;y++)cols[xx]+=Math.abs(g[y*w+xx]-g[y*w+xx-1]);
+  const peaks=(arr,minGapF)=>{const th=arr.reduce((s,v)=>s+v,0)/arr.length*1.8;const out=[];let last=-1e9;const minGap=arr.length*minGapF;
+    for(let i=1;i<arr.length-1;i++){if(arr[i]>th&&arr[i]>=arr[i-1]&&arr[i]>=arr[i+1]&&i-last>=minGap){out.push(i);last=i}}return out};
+  const shelves=Math.max(1,peaks(rows,.08).length), secs=Math.max(1,peaks(cols,.15).length+1);
+  res({closet_type:'wardrobe',estimated_dims_cm:{w:120,h:200,d:55},
+    compartments:[{kind:'shelf',count:shelves,holds:'detected shelf levels'},{kind:'rail',count:secs,holds:'vertical sections'}],
+    clutter:'On-device read of the photo - roughly '+shelves+' shelf level'+(shelves>1?'s':'')+' across '+secs+' section'+(secs>1?'s':'')+'.',
+    quick_wins:['Empty one shelf at a time','Fold into stacks of five','Box what you rarely wear']});
+};img.src=URL.createObjectURL(blob)})}
+
+window.confirmDims=function(){
+  SORT.dims={w:Math.max(40,parseInt($('#d-w').value)||120),h:Math.max(40,parseInt($('#d-h').value)||200),d:Math.max(20,parseInt($('#d-d').value)||55)};
+  SORT.step=4;SORT.plan=buildPlan();SORT.orgs=buildOrgs();sort();
+  if(SORT.genState!=='working'&&!SORT.afterId){SORT.genState='working';SORT.genErr=null;
+    genAfter().then(()=>{SORT.genState='done';SORT.showAfter=true;saveSpace();sort()})
+      .catch(()=>{SORT.genState='idle';SORT.genErr='The after-state image service is busy - your plan below is ready, and the photo comparison will work next visit.';saveSpace();sort()})}
+}
+function saveSpace(){
+  const sp={id:SORT.spaceId||uid(),photoId:SORT.photoId,type:SORT.type,dims:SORT.dims,analysis:SORT.analysis,plan:SORT.plan,orgs:SORT.orgs,afterId:SORT.afterId||null,created:new Date().toISOString()};
+  SORT.spaceId=sp.id;
+  const i=S.spaces.findIndex(x=>x.id===sp.id);if(i>=0)S.spaces[i]=sp;else S.spaces.unshift(sp);save();
+}
+
+function buildPlan(){
+  const cs=(SORT.analysis&&SORT.analysis.compartments)||[];
+  const has=k=>cs.some(c=>c.kind===k);const p=[];
+  if(has('rail'))p.push('Hang everything long first - shirts and kurtas to the left, dresses and abayas to the right, colours running light to dark.');
+  if(has('shelf'))p.push('Fold into stacks of five to seven, heaviest at the bottom, one category per stack.');
+  if(has('drawer'))p.push('File-fold tees and innerwear vertically, so every piece is visible at a glance.');
+  if(has('box'))p.push('Re-box by theme - accessories, seasonal, seldom-worn - and label every box on its face.');
+  if(has('floor'))p.push('Shoes in pairs, heel to toe; anything without a pair leaves the floor.');
+  ((SORT.analysis&&SORT.analysis.quick_wins)||[]).forEach(q=>{if(q&&!p.some(x=>x.toLowerCase()===String(q).toLowerCase()))p.push(String(q))});
+  return p.slice(0,6);
+}
+function buildOrgs(){
+  const cs=(SORT.analysis&&SORT.analysis.compartments)||[];
+  const has=k=>cs.some(c=>c.kind===k);const o=[];
+  const shelfW=Math.min(45,Math.max(25,Math.round(SORT.dims.w/3)));
+  if(has('rail'))o.push({n:'Slim velvet hangers, 30-pack',w:'Matching slim hangers free up to a fifth of the rail and stop slip-offs.',s:'40cm adult size',q:'slim+velvet+hangers'});
+  if(has('shelf'))o.push({n:'Shelf dividers, set of 4',w:'Keep folded stacks upright instead of toppling into each other.',s:'fits shelves up to '+SORT.dims.d+'cm deep',q:'shelf+dividers+set'});
+  if(has('shelf')||has('box'))o.push({n:'Fabric storage boxes with lids',w:'Dust-free homes for seasonal and seldom-worn pieces.',s:'about '+shelfW+'cm wide to sit two-across on your shelves',q:'fabric+storage+box+with+lid'});
+  if(has('drawer'))o.push({n:'Drawer organiser cells, set of 6',w:'Socks, innerwear and accessories each get their own cell.',s:'28 x 28 x 10cm cells',q:'drawer+organizer+set'});
+  if(has('floor'))o.push({n:'Two-tier shoe rack',w:'Lifts pairs off the floor and doubles the row.',s:'60cm wide fits a '+SORT.dims.w+'cm closet',q:'shoe+rack+2+tier'});
+  o.push({n:'Vacuum storage bags',w:'Off-season bulk shrinks to a third of its size and lives on the top shelf.',s:'large 70 x 100cm',q:'vacuum+storage+bags'});
+  return o.slice(0,5);
+}
+
+function afterPrompt(){
+  const t=(SORT_TYPES.find(t=>t.id===SORT.type)||SORT_TYPES[0]).n.toLowerCase();
+  const cs=(SORT.analysis&&SORT.analysis.compartments)||[];
+  const comp=cs.map(c=>(c.count>1?c.count+' ':'a ')+(c.kind==='rail'?'hanging rail':c.kind)+(c.count>1?'s':'')).join(', ')||'hanging rails and shelves';
+  return 'photorealistic interior photograph of a neatly organised '+t+', '+SORT.dims.w+'cm wide and '+SORT.dims.h+'cm tall, with '+comp+', clothes folded in tidy even stacks, shirts on matching slim hangers arranged by colour, labelled beige fabric storage boxes, everything aligned and symmetrical, soft warm daylight, no people, no text';
+}
+async function genAfter(){
+  const url='https://image.pollinations.ai/prompt/'+encodeURIComponent(afterPrompt())+'?width=768&height=1024&nologo=true&seed='+Math.floor(Math.random()*1e6);
+  const ac=new AbortController();const to=setTimeout(()=>ac.abort(),90000);
+  const r=await fetch(url,{signal:ac.signal});clearTimeout(to);
+  if(!r.ok)throw new Error('img_'+r.status);
+  const b=await r.blob();
+  if(!b||b.size<8000)throw new Error('img_empty');
+  SORT.afterId=uid();await putPhoto(SORT.afterId,b);
+}
+
 /* ---------- boot ---------- */
 (async function(){
   await loadWeather();
